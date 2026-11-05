@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="TechnoOnlineShop.IdentityServer.Application.Contracts/TechnoOnlineShop.IdentityServer.Application.Contracts.csproj" />
+    <Project Path="TechnoOnlineShop.IdentityServer.Application/TechnoOnlineShop.IdentityServer.Application.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="TechnoOnlineShop.IdentityServer.Domain/TechnoOnlineShop.IdentityServer.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="TechnoOnlineShop.IdentityServer.Infrastructure.EF/TechnoOnlineShop.IdentityServer.Infrastructure.EF.csproj" />
+  </Folder>
+  <Project Path="TechnoOnlineShop.IdentityServer.Api/TechnoOnlineShop.IdentityServer.Api.csproj" />
+</Solution>

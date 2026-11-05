@@ -1,0 +1,93 @@
+services:
+  sqlserver2022:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver2022
+    hostname: sqlserver2022
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: YourStrongPassword123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - technetwork
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" -b -o /dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+    
+  identity-migrator:
+    build:
+      context: .
+      dockerfile: TechnoIdentityServer.EfCoreMigrator/Dockerfile
+    image: technoidentityserver-migrator:latest
+    container_name: technoidentityserver-migrator
+    environment:
+       ConnectionStrings__IdentityDatabase: "Server=sqlserver2022,1433;Database=TechnoOnlineShopIdentity;User Id=sa;Password=YourStrongPassword123!;Encrypt=True;TrustServerCertificate=True"
+    volumes:
+       - "./migrations/IdentityServer.sql:/app/migrations/IdentityServer.sql:ro"
+    depends_on:
+      sqlserver2022:
+         condition: service_healthy
+    networks:
+      - technetwork
+    restart: "no"
+
+  techidentityserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tchidentityserver:latest
+    container_name: techidentityservercontainer
+    hostname: techidentityserver
+    volumes:
+       - "${PWD}/certificates:/app/certificates:ro" 
+    environment:
+      ASPNETCORE_URLS: "http://+:1115"
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__IdentityDatabase: "Server=sqlserver2022,1433;Database=TechnoOnlineShopIdentity;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;Encrypt=True;MultipleActiveResultSets=True"
+    ports:
+      - "1115:1115"
+    depends_on:
+      sqlserver2022:
+        condition: service_healthy
+      identity-migrator:
+        condition: service_completed_successfully
+    networks:
+      - technetwork
+    restart: unless-stopped
+  
+  techordermanagement:
+    build:
+     context: TechnoOnlineShop.OrderManagement
+     dockerfile: DockerFile
+    image: tchordermng
+    container_name: tchordermngcontainer
+    hostname: techordermanagement
+    volumes:
+      - "${PWD}/certificates:/app/certificates:ro"
+    environment:
+     ASPNETCORE_URLS: "http://+:1116"
+     ASPNETCORE_ENVIRONMENT: Development
+    ports:
+      - "1116:1116"
+    depends_on: 
+      sqlserver2022:
+        condition: service_healthy
+    networks:
+      - technetwork
+    restart: unless-stopped
+networks:
+  technetwork:
+    name: technetwork
+    driver: bridge
+volumes:
+  sqlserver_data:
+    name: sqlserver_data
